@@ -56,12 +56,10 @@ class Oracle(BaseSQLQueryRunner):
             "properties": {
                 "user": {"type": "string"},
                 "password": {"type": "string"},
-                "host": {"type": "string"},
-                "port": {"type": "number"},
                 "servicename": {"type": "string", "title": "DSN Service Name"},
                 "encoding": {"type": "string"},
             },
-            "required": ["servicename", "user", "password", "host", "port"],
+            "required": ["servicename", "user", "password"],
             "extra_options": ["encoding"],
             "secret": ["password"],
         }
@@ -128,16 +126,10 @@ class Oracle(BaseSQLQueryRunner):
         if self.configuration.get("encoding"):
             os.environ["NLS_LANG"] = self.configuration["encoding"]
 
-        dsn = cx_Oracle.makedsn(
-            self.configuration["host"],
-            self.configuration["port"],
-            service_name=self.configuration["servicename"],
-        )
-
         connection = cx_Oracle.connect(
             user=self.configuration["user"],
             password=self.configuration["password"],
-            dsn=dsn,
+            dsn=self.configuration["servicename"]
         )
         connection.outputtypehandler = Oracle.output_handler
 
