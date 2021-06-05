@@ -1,3 +1,5 @@
+# Original: https://github.com/getredash/redash/blob/master/Dockerfile
+# Updated to add Oracle Instant Client
 FROM node:12 as frontend-builder
 
 # Controls whether to build the frontend assets
@@ -74,6 +76,15 @@ RUN wget --quiet $databricks_odbc_driver_url -O /tmp/simba_odbc.zip \
   && rm /tmp/simba_odbc.zip \
   && rm -rf /tmp/SimbaSparkODBC*
 
+# Add Oracle Instant Client
+WORKDIR /tmp
+RUN curl -o oracle_instant_client_installer_debian.sh https://bitbucket.org/!api/2.0/snippets/mythics/on5GqE/master/files/oracle_instant_client_installer_debian.sh \
+  && chmod +x oracle_instant_client_installer_debian.sh \
+  && ./oracle_instant_client_installer_debian.sh
+# Add REDASH ENV to add Oracle Query Runner
+ENV REDASH_ADDITIONAL_QUERY_RUNNERS=redash.query_runner.oracle
+# End add Oracle Instant Client
+
 WORKDIR /app
 
 # Disalbe PIP Cache and Version Check
@@ -84,6 +95,11 @@ ENV PIP_NO_CACHE_DIR=1
 RUN pip install pip==20.2.4;
 
 # We first copy only the requirements file, to avoid rebuilding on every file change.
+
+# Oracle Database Data Source
+COPY requirements_oracle_ds.txt ./
+RUN if [ "x$skip_ds_deps" = "x" ] ; then pip install -r requirements_oracle_ds.txt ; else echo "Skipping pip install -r requirements_oracle_ds.txt" ; fi
+
 COPY requirements_all_ds.txt ./
 RUN if [ "x$skip_ds_deps" = "x" ] ; then pip install -r requirements_all_ds.txt ; else echo "Skipping pip install -r requirements_all_ds.txt" ; fi
 
